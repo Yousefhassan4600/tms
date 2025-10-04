@@ -10,7 +10,7 @@ class TasksPieChart extends ChartWidget
 
     public function getHeading(): string
     {
-        return 'نسبة المهام حسب الحالة';
+        return 'المهام حسب الحالة';
     }
 
     protected function getType(): string

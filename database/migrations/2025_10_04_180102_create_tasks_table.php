@@ -10,6 +10,7 @@ return new class extends Migration {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
             $table->string('desc')->nullable();
+            $table->string('reject_reason')->nullable();
             $table->string('file')->nullable();
             $table->enum('status', \App\Enums\TaskStatus::values())->default(\App\Enums\TaskStatus::New->value)->nullable();
             $table->foreignId('task_category_id')->constrained()->onDelete('cascade');

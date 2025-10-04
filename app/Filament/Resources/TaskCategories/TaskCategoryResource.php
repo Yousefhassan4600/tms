@@ -18,6 +18,8 @@ class TaskCategoryResource extends Resource
 {
     protected static ?string $model = TaskCategory::class;
 
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $recordTitleAttribute = 'تصنيفات المهمات';
 
     protected static ?string $navigationLabel = 'تصنيفات المهمات';
@@ -26,7 +28,7 @@ class TaskCategoryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'تصنيفات المهمات';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
 
     public static function form(Schema $schema): Schema
     {

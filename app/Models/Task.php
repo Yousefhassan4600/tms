@@ -8,6 +8,7 @@ class Task extends Model
 {
     protected $fillable = [
         'desc',
+        'reject_reason',
         'file',
         'status',
         'task_category_id',

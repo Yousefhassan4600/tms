@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tasks;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\Tasks\Pages\CreateTask;
 use App\Filament\Resources\Tasks\Pages\EditTask;
 use App\Filament\Resources\Tasks\Pages\ListTasks;
@@ -13,9 +14,12 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class TaskResource extends Resource
 {
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'مهمات';
 
@@ -26,7 +30,7 @@ class TaskResource extends Resource
     protected static ?string $pluralModelLabel = 'مهمات';
     protected static ?string $model = Task::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
     public static function form(Schema $schema): Schema
     {
@@ -43,6 +47,18 @@ class TaskResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // dd(auth()->user()->role->value);
+        if (auth()->user()->role->value === UserRole::SuperVisor->value) {
+            return parent::getEloquentQuery();
+        } else if (auth()->user()->role->value === UserRole::Manager->value) {
+            return parent::getEloquentQuery()->where('status', 3);
+        } else {
+            return parent::getEloquentQuery()->where('user_id', auth()->id());
+        }
     }
 
     public static function getPages(): array

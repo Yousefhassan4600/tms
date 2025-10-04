@@ -36,18 +36,18 @@ class TaskForm
                             TaskStatus::Rejected,
                         ])->mapWithKeys(fn($r) => [$r->value => $r->label()]);
                     })
-                    ->default( TaskStatus::New)
-                    ->required(),
+                    ->default(TaskStatus::New)
+                    ->disabled(),
 
                 Hidden::make('user_id')
-                    ->default(fn () => auth()->id()),
+                    ->default(fn() => auth()->id()),
 
                 FileUpload::make('file')
                     ->label('ملف المهمة')
                     ->nullable()
-                    ->maxSize(10240) // 10 MB
+                    ->disk('public')            // store under storage/app/public
                     ->directory('tasks')
-                    ->visibility('private'),
+                    ->visibility('public'),
             ]);
     }
 }

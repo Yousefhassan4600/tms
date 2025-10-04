@@ -19,20 +19,15 @@ class TaskCategoriesTable
             ->columns([
 
 
-                 TextColumn::make('name')->label('اسم التصنيف')->sortable()->searchable(),
-                 IconColumn::make('is_active')
-                     ->boolean()
-                     ->label('نشط')->sortable(),
+                TextColumn::make('name')->label('اسم التصنيف')->sortable()->searchable(),
+                IconColumn::make('is_active')
+                    ->boolean()
+                    ->label('نشط')->sortable(),
             ])
-            ->filters([
-            ])
+            ->filters([])
             ->recordActions([
                 EditAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->toolbarActions([]);
     }
 }
