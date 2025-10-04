@@ -5,7 +5,7 @@ namespace App\Enums;
 enum UserRole: int
 {
     case SuperVisor = 1;
-    case Manger = 2;
+    case Manager = 2;
     case Employee = 3;
 
     public static function values(): array
