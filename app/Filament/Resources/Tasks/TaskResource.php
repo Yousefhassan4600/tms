@@ -28,7 +28,26 @@ class TaskResource extends Resource
     protected static ?string $modelLabel =  'مهمة';
 
     protected static ?string $pluralModelLabel = 'مهمات';
+
     protected static ?string $model = Task::class;
+
+    public static function getNavigationBadge(): ?string
+    {
+        if (auth()->user()->role->value === UserRole::SuperVisor->value) {
+            return (string)Task::where(function (Builder $query) {
+                $query;
+            })->count();
+        } else if (auth()->user()->role->value === UserRole::Manager->value) {
+            return (string)Task::where('status', 3)->where(function (Builder $query) {
+                $query;
+            })->count();
+        } else {
+            return (string)Task::where('user_id', auth()->id())->where(function (Builder $query) {
+                $query;
+            })->count();
+        }
+    }
+
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
@@ -39,7 +58,7 @@ class TaskResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return TasksTable::configure($table);
+        return TasksTable::configure($table)->defaultSort('id', 'desc');
     }
 
     public static function getRelations(): array

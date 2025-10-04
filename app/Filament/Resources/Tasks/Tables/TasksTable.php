@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tasks\Tables;
 
+use App\Support\TaskStatusLabel;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -13,7 +14,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
+use Filament\Notifications\Actions\Action as NotificationAction;
 
 class TasksTable
 {
@@ -21,6 +25,7 @@ class TasksTable
     {
         return $table
             ->columns([
+                TextColumn::make('id')->label('#')->sortable()->searchable(),
                 TextColumn::make('desc')->label('الوصف')->sortable()->searchable(),
                 SelectColumn::make('status')
                     ->label('الحاله')
@@ -65,12 +70,29 @@ class TasksTable
 
                         $record->update($payload);
 
+                        // 🔔 Toast for current operator
+                        Notification::make()
+                            ->title('تم تحديث حالة المهمة')
+                            ->body('الحالة الجديدة: ' . TaskStatusLabel::fromValue($new))
+                            ->success()
+                            ->send();
+
+                        // 🔔 Database notification for the task owner (bell icon)
+                        if ($record->user) {
+                            Notification::make()
+                                ->title('تم تعديل حالة مهمتك')
+                                ->body("({$record->id}) أصبحت الحالة: " . TaskStatusLabel::fromValue($new))
+                                ->success()
+                                ->sendToDatabase($record->user);
+                        }
+
                         // Tell Filament what to show in the cell after saving.
                         return $new;
                     })
-                    ->disabled(fn($record) =>
+                    ->disabled(
+                        fn($record) =>
                         in_array($record->status, [\App\Enums\TaskStatus::Approved, \App\Enums\TaskStatus::Rejected])
-                        || auth()->user()->role->value === 3
+                            || auth()->user()->role->value === 3
                     ),
                 TextColumn::make('taskCategory.name')->label('التصنيف')->sortable()->searchable(),
                 TextColumn::make('user.name')->label('المستخدم')->sortable()->searchable(),
@@ -102,8 +124,9 @@ class TasksTable
 
                         ->icon('heroicon-m-eye'),
                     EditAction::make()
-                        ->visible(fn($record) => auth()->user()->role->value === 1 )
-                        ->disabled(fn($record) => auth()->user()->role->value !== 1 ),
+                        ->visible(fn($record) => auth()->user()->role->value === 1)
+                        ->disabled(fn($record) => auth()->user()->role->value !== 1),
+
                     Action::make('reject')                // 👈 this must exist for mountTableAction() to work
                         ->label('رفض')
                         ->icon('heroicon-m-x-circle')
@@ -122,9 +145,30 @@ class TasksTable
                                 'reject_reason' => $data['reject_reason'],
                                 'approved_at'   => null,
                             ]);
+                            Notification::make()
+                                ->title('تم رفض المهمة')
+                                ->body('تم حفظ سبب الرفض.')
+                                ->danger()
+                                ->send();
+
+                            // Notify task owner in the bell, with a quick “عرض المهمة” button
+                            if ($record->user) {
+                                Notification::make()
+                                    ->title('تم رفض مهمتك')
+                                    ->body("({$record->id}) سبب الرفض: {$data['reject_reason']}")
+                                    ->danger()
+                                    ->actions([
+                                        Action::make('view')
+                                            ->label('عرض المهمة')
+                                            ->button()
+                                            ->url(route('filament.admin.resources.tasks.edit', $record)),
+                                    ])
+                                    ->sendToDatabase($record->user);
+                            }
                         })
                         ->color('danger')
                         ->hidden(fn($record) => ($record->status === \App\Enums\TaskStatus::Rejected || $record->status === \App\Enums\TaskStatus::Approved)),
+
                     Action::make('view_file')
                         ->label('عرض الملف')
                         ->icon('heroicon-m-eye')
@@ -135,6 +179,43 @@ class TasksTable
 
                 ]),
             ])
-            ->toolbarActions([]);
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('approve_all')
+                        ->label('موافقة على جميع المهام')
+                        ->icon('heroicon-m-check-circle')
+                        ->requiresConfirmation()
+                        ->action(function ($records) {
+                            $userIds = [];
+                            $records->each(function ($task) use (&$userIds) {
+                                $task->update([
+                                    'status'        => \App\Enums\TaskStatus::Approved->value,
+                                    'approved_at'   => now(),
+                                    'rejected_at'   => null,
+                                    'reject_reason' => null,
+                                ]);
+                                if ($task->user_id) {
+                                    $userIds[] = $task->user_id;
+                                }
+                            });
+                            Notification::make()
+                                ->title('تمت الموافقة على المهام المحددة')
+                                ->success()
+                                ->send();
+
+                            // Database notifications to unique owners
+                            $notifiables = \App\Models\User::whereIn('id', array_unique($userIds))->get();
+
+                            if ($notifiables->isNotEmpty()) {
+                                Notification::make()
+                                    ->title('تمت الموافقة على مهمة/مهام تخصك')
+                                    ->body('تمت الموافقة على بعض المهام الخاصة بك.')
+                                    ->success()
+                                    ->sendToDatabase($notifiables);
+                            }
+                        })
+                        ->color('success'),
+                ])->visible(fn() => auth()->user()->role->value === \App\Enums\UserRole::Manager->value),
+            ]);
     }
 }
