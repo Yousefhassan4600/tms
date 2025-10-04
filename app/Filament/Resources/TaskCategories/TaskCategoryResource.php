@@ -30,6 +30,10 @@ class TaskCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()->role->value ===1;
+    }
     public static function form(Schema $schema): Schema
     {
         return TaskCategoryForm::configure($schema);

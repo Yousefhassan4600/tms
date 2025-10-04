@@ -13,7 +13,10 @@ class EditTask extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
         ];
+    }
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()->role->value ===1;
     }
 }
