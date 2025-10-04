@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Tasks\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -66,9 +68,13 @@ class TasksTable
                         // Tell Filament what to show in the cell after saving.
                         return $new;
                     })
-                    ->disabled(fn($record) => in_array($record->status, [\App\Enums\TaskStatus::Approved, \App\Enums\TaskStatus::Rejected])),
+                    ->disabled(fn($record) =>
+                        in_array($record->status, [\App\Enums\TaskStatus::Approved, \App\Enums\TaskStatus::Rejected])
+                        || auth()->user()->role->value === 3
+                    ),
                 TextColumn::make('taskCategory.name')->label('التصنيف')->sortable()->searchable(),
                 TextColumn::make('user.name')->label('المستخدم')->sortable()->searchable(),
+                TextColumn::make('reject_reason')->label('سبب الرفض')->sortable()->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime('d/m/Y h:i A')
                     ->label('تاريخ الإنشاء')->sortable(),
@@ -83,10 +89,21 @@ class TasksTable
                     ->label('تاريخ الرفض')->sortable(),
 
             ])
+            ->recordUrl(
+                fn($record) => auth()->user()->role->value !== 1 ? null : route('filament.admin.resources.tasks.edit', $record)
+            )
+
             ->filters([])
             ->recordActions([
                 ActionGroup::make([
-                    EditAction::make(),
+
+                    ViewAction::make()
+                        ->label('عرض')
+
+                        ->icon('heroicon-m-eye'),
+                    EditAction::make()
+                        ->visible(fn($record) => auth()->user()->role->value === 1 )
+                        ->disabled(fn($record) => auth()->user()->role->value !== 1 ),
                     Action::make('reject')                // 👈 this must exist for mountTableAction() to work
                         ->label('رفض')
                         ->icon('heroicon-m-x-circle')

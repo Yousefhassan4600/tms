@@ -29,7 +29,10 @@ class UserResource extends Resource
     protected static ?string $modelLabel = 'مستخدم';
 
     protected static ?string $pluralModelLabel = 'مستخدمين';
-
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()->role->value ===1;
+    }
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
