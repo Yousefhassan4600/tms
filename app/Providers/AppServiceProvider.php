@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // set locale to arabic
         \Illuminate\Support\Facades\App::setLocale('ar');
     }
 }
