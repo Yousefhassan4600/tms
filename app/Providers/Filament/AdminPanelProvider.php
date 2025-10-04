@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Widgets\TasksPieChart;
+use App\Filament\Widgets\TasksWidget;
 use App\Filament\Widgets\UsersWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -43,7 +44,8 @@ class AdminPanelProvider extends PanelProvider
             // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 UsersWidget::class,
-                TasksPieChart::class,
+                TasksWidget::class
+                // TasksPieChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

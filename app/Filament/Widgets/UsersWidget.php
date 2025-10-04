@@ -92,7 +92,7 @@ class UsersWidget extends BaseWidget
                     IconPosition::Before
                 )
                 ->chart([2, 6, 12, 18, 24])
-                ->color('warning'),
+                ->color('danger'),
         ];
     }
 }

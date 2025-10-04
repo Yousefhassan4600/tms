@@ -7,7 +7,7 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 
-class UsersWidget extends BaseWidget
+class TasksWidget extends BaseWidget
 {
     protected function getStats(): array
     {
@@ -15,66 +15,72 @@ class UsersWidget extends BaseWidget
         $start = now()->startOfMonth();
         $end   = now()->endOfMonth();
 
-        $users_stats = DB::table('users as u')
-            ->selectRaw('COUNT(*) AS total_users')
-            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS users_new_this_month', [$start, $end])
+        $tasks_stats = DB::table('tasks as u')
+            ->selectRaw('COUNT(*) AS total_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS tasks_new_this_month', [$start, $end])
             ->first();
 
-        $supervisors_stats = DB::table('users as u')
-            ->where('u.role', \App\Enums\UserRole::SuperVisor)
-            ->selectRaw('COUNT(*) AS total_supervisors')
-            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS supervisors_new_this_month', [$start, $end])
+        $new_tasks_stats = DB::table('tasks as u')
+            ->where('u.status', \App\Enums\TaskStatus::New->value)
+            ->selectRaw('COUNT(*) AS total_new_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS new_tasks_new_this_month', [$start, $end])
             ->first();
 
-        $managers_stats = DB::table('users as u')
-            ->where('u.role', \App\Enums\UserRole::Manager)
-            ->selectRaw('COUNT(*) AS total_managers')
-            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS managers_new_this_month', [$start, $end])
+        $reviewed_tasks_stats = DB::table('tasks as u')
+            ->where('u.status', \App\Enums\TaskStatus::Reviewed->value)
+            ->selectRaw('COUNT(*) AS total_reviewed_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS reviewed_tasks_new_this_month', [$start, $end])
             ->first();
 
-        $employees_stats = DB::table('users as u')
-            ->where('u.role', \App\Enums\UserRole::Employee)
-            ->selectRaw('COUNT(*) AS total_employees')
-            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS employees_new_this_month', [$start, $end])
+        $holding_tasks_stats = DB::table('tasks as u')
+            ->where('u.status', \App\Enums\TaskStatus::Holding->value)
+            ->selectRaw('COUNT(*) AS total_holding_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS holding_tasks_new_this_month', [$start, $end])
             ->first();
+
+        $approved_tasks_stats = DB::table('tasks as u')
+            ->where('u.status', \App\Enums\TaskStatus::Approved->value)
+            ->selectRaw('COUNT(*) AS total_approved_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS approved_tasks_new_this_month', [$start, $end])
+            ->first();
+
+        $rejected_tasks_stats = DB::table('tasks as u')
+            ->where('u.status', \App\Enums\TaskStatus::Rejected->value)
+            ->selectRaw('COUNT(*) AS total_rejected_tasks')
+            ->selectRaw('SUM(CASE WHEN u.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) AS rejected_tasks_new_this_month', [$start, $end])
+            ->first();
+
 
         $result = [
-            'total_users'             => (int) $users_stats->total_users,
-            'users_new_this_month'    => (int) $users_stats->users_new_this_month,
-            'total_supervisors'         => (int) $supervisors_stats->total_supervisors,
-            'supervisors_new_this_month' => (int) $supervisors_stats->supervisors_new_this_month,
-            'total_managers'         => (int) $managers_stats->total_managers,
-            'managers_new_this_month' => (int) $managers_stats->managers_new_this_month,
-            'total_employees'         => (int) $employees_stats->total_employees,
-            'employees_new_this_month' => (int) $employees_stats->employees_new_this_month,
+            'total_tasks' => $tasks_stats->total_tasks,
+            'tasks_new_this_month' => $tasks_stats->tasks_new_this_month,
+            'total_new_tasks' => $new_tasks_stats->total_new_tasks,
+            'new_tasks_new_this_month' => $new_tasks_stats->new_tasks_new_this_month,
+            'total_reviewed_tasks' => $reviewed_tasks_stats->total_reviewed_tasks,
+            'reviewed_tasks_new_this_month' => $reviewed_tasks_stats->reviewed_tasks_new_this_month,
+            'total_holding_tasks' => $holding_tasks_stats->total_holding_tasks,
+            'holding_tasks_new_this_month' => $holding_tasks_stats->holding_tasks_new_this_month,
+            'total_approved_tasks' => $approved_tasks_stats->total_approved_tasks,
+            'approved_tasks_new_this_month' => $approved_tasks_stats->approved_tasks_new_this_month,
+            'total_rejected_tasks' => $rejected_tasks_stats->total_rejected_tasks,
+            'rejected_tasks_new_this_month' => $rejected_tasks_stats->rejected_tasks_new_this_month,
         ];
 
         return [
-            Stat::make('جميع المستخدمين', $result['total_users'])
+            Stat::make('المهام', $result['total_tasks'])
                 ->description(
-                    sprintf('%+d %s', $result['users_new_this_month'], 'مستخدم' . ' ' . 'جديد هذا الشهر')
-                )
-                ->descriptionIcon(
-                    'heroicon-m-user-plus',
-                    IconPosition::Before
-                )
-                ->chart([1, 3, 7, 13, 20])
-                ->color('success'),
-
-            Stat::make('المشرفين', $result['total_supervisors'])
-                ->description(
-                    sprintf('%+d %s', $result['supervisors_new_this_month'], 'مشرف' . ' ' . 'جديد هذا الشهر')
+                    sprintf('%+d %s', $result['tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
                 )
                 ->descriptionIcon(
                     'heroicon-m-user-group',
                     IconPosition::Before
                 )
                 ->chart([2, 6, 12, 18, 24])
-                ->color('primary'),
+                ->color('success'),
 
-            Stat::make('المدراء', $result['total_managers'])
+            Stat::make('جديد', $result['total_new_tasks'])
                 ->description(
-                    sprintf('%+d %s', $result['managers_new_this_month'], 'مدير' . ' ' . 'جديد هذا الشهر')
+                    sprintf('%+d %s', $result['new_tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
                 )
                 ->descriptionIcon(
                     'heroicon-m-user-group',
@@ -83,9 +89,9 @@ class UsersWidget extends BaseWidget
                 ->chart([2, 6, 12, 18, 24])
                 ->color('info'),
 
-            Stat::make('الموظفين', $result['total_employees'])
+            Stat::make('تم المراجعة', $result['total_reviewed_tasks'])
                 ->description(
-                    sprintf('%+d %s', $result['employees_new_this_month'], 'موظف' . ' ' . 'جديد هذا الشهر')
+                    sprintf('%+d %s', $result['reviewed_tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
                 )
                 ->descriptionIcon(
                     'heroicon-m-user-group',
@@ -93,6 +99,41 @@ class UsersWidget extends BaseWidget
                 )
                 ->chart([2, 6, 12, 18, 24])
                 ->color('warning'),
+
+            Stat::make('قيد الانتظار', $result['total_holding_tasks'])
+                ->description(
+                    sprintf('%+d %s', $result['holding_tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
+                )
+                ->descriptionIcon(
+                    'heroicon-m-user-group',
+                    IconPosition::Before
+                )
+                ->chart([2, 6, 12, 18, 24])
+                ->color('warning'),
+
+            Stat::make('تم الموافقة', $result['total_approved_tasks'])
+                ->description(
+                    sprintf('%+d %s', $result['approved_tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
+                )
+                ->descriptionIcon(
+                    'heroicon-m-user-group',
+                    IconPosition::Before
+                )
+                ->chart([2, 6, 12, 18, 24])
+                ->color('success'),
+
+            Stat::make('تم الرفض', $result['total_rejected_tasks'])
+                ->description(
+                    sprintf('%+d %s', $result['rejected_tasks_new_this_month'], 'مهمة' . ' ' . 'جديد هذا الشهر')
+                )
+                ->descriptionIcon(
+                    'heroicon-m-user-group',
+                    IconPosition::Before
+                )
+                ->chart([2, 6, 12, 18, 24])
+                ->color('danger'),
+
+
         ];
     }
 }
