@@ -26,7 +26,13 @@ class TasksTable
         return $table
             ->columns([
                 TextColumn::make('id')->label('#')->sortable()->searchable(),
-                TextColumn::make('desc')->label('الوصف')->sortable()->searchable(),
+                TextColumn::make('desc')
+                    ->label('الوصف')
+                    ->limit(10)
+
+                    ->html()
+                    ->sortable()
+                    ->searchable(),
                 SelectColumn::make('status')
                     ->label('الحاله')
                     ->options(function () {
@@ -175,6 +181,14 @@ class TasksTable
                         ->url(fn($record) => Storage::url($record->file))
                         ->hidden(fn($record) => !$record->file)
                         ->color('success'),
+
+                    Action::make('print_task')
+                        ->label('طباعة')
+                        ->icon('heroicon-m-printer')
+                        ->openUrlInNewTab()
+
+                        ->url(fn($record) => route('tasks.print', $record))
+                        ->color('info'),
 
                 ]),
             ])

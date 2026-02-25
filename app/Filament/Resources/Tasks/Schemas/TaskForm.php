@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Tasks\Schemas;
 use App\Enums\TaskStatus;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -15,10 +16,10 @@ class TaskForm
     {
         return $schema
             ->components([
-                TextInput::make('desc')
+                RichEditor::make('desc')
                     ->label('وصف المهمة')
-                    ->required()
-                    ->maxLength(255),
+                    ->columnSpanFull()
+                    ->required(),
 
                 Select::make('task_category_id')
                     ->label('تصنيف المهمة')
@@ -47,6 +48,7 @@ class TaskForm
                     ->nullable()
                     ->disk('public')            // store under storage/app/public
                     ->directory('tasks')
+                    ->columnSpanFull()
                     ->visibility('public'),
             ]);
     }
